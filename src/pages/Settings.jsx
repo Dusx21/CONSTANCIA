@@ -28,8 +28,10 @@ export default function Settings() {
     syncError,
     lastSyncTime,
     manualSync,
+    resetAllData,
     configureSupabase,
-    supabaseConfig
+    supabaseConfig,
+    authUser
   } = useApp()
 
   const [resetModal, setResetModal] = useState(false)
@@ -321,10 +323,14 @@ export default function Settings() {
         onClose={() => setResetModal(false)}
         title="¿Restablecer datos iniciales?"
         text="Se restaurarán los hábitos, tareas y configuración iniciales. Esta acción borrará los datos actuales."
-        onConfirm={() => {
-          setData(storageService.reset())
+        onConfirm={async () => {
+          const clean = storageService.reset()
+          setData(clean)
+          if (supabaseService.isConfigured()) {
+            await supabaseService.pushRemoteData(clean, authUser?.id)
+          }
           setResetModal(false)
-          flash('Datos restaurados de fábrica')
+          flash('Sistema limpio y restablecido de fábrica')
         }}
       />
     </PageTransition>

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
-import { storageService } from '../services/storageService'
+import { storageService, isMockData } from '../services/storageService'
 import {
   supabaseService,
   getStoredSupabaseConfig,
@@ -17,7 +17,10 @@ export function getTimeGreeting() {
 }
 
 export function AppProvider({ children }) {
-  const [data, setData] = useState(() => storageService.get())
+  const [data, setData] = useState(() => {
+    const initial = storageService.get()
+    return isMockData(initial) ? storageService.reset() : initial
+  })
   const [toast, setToast] = useState('')
   const [syncStatus, setSyncStatus] = useState('local') // 'local' | 'syncing' | 'synced' | 'error'
   const [syncError, setSyncError] = useState(null)
@@ -78,8 +81,14 @@ export function AppProvider({ children }) {
             setSyncStatus('syncing')
             const cloudRes = await supabaseService.fetchRemoteData(nextUser.id)
             if (cloudRes.data) {
-              setData(cloudRes.data)
-              storageService.save(cloudRes.data)
+              if (isMockData(cloudRes.data)) {
+                const clean = storageService.reset()
+                setData(clean)
+                await supabaseService.pushRemoteData(clean, nextUser.id)
+              } else {
+                setData(cloudRes.data)
+                storageService.save(cloudRes.data)
+              }
             }
             setSyncStatus('synced')
           }
@@ -90,12 +99,21 @@ export function AppProvider({ children }) {
         setSyncStatus('syncing')
         const remote = await supabaseService.fetchRemoteData(user?.id)
         if (remote.data) {
-          setData(remote.data)
-          storageService.save(remote.data)
-          setSyncStatus('synced')
-          setLastSyncTime(new Date(remote.updatedAt || Date.now()))
+          if (isMockData(remote.data)) {
+            // Datos antiguos de prueba en Supabase: los purga y guarda el estado limpio en la nube
+            const clean = storageService.reset()
+            setData(clean)
+            await supabaseService.pushRemoteData(clean, user?.id)
+            setSyncStatus('synced')
+            setLastSyncTime(new Date())
+          } else {
+            setData(remote.data)
+            storageService.save(remote.data)
+            setSyncStatus('synced')
+            setLastSyncTime(new Date(remote.updatedAt || Date.now()))
+          }
         } else if (!remote.error) {
-          // No había datos aún en la nube para este usuario: subimos los datos iniciales
+          // No había datos aún en la nube para este usuario: subimos los datos limpios iniciales
           const pushRes = await supabaseService.pushRemoteData(data, user?.id)
           if (pushRes.success) {
             setSyncStatus('synced')
