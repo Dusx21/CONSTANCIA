@@ -22,8 +22,8 @@ const links = [
 ]
 
 export default function More() {
-  const { data, syncStatus } = useApp()
-  const userName = data.settings?.name || 'Mi Espacio'
+  const { data, syncStatus, displayName, authUser } = useApp()
+  const userInitial = displayName.charAt(0).toUpperCase() || 'U'
 
   return (
     <PageTransition className="max-w-2xl">
@@ -37,21 +37,25 @@ export default function More() {
 
       {/* Tarjeta de Perfil & Nube en móvil */}
       <div className="card mt-6 flex items-center justify-between border-emerald/20 bg-gradient-to-r from-surface to-elevated">
-        <div className="flex items-center gap-3">
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald font-display text-lg font-bold text-canvas shadow-glow">
-            {userName.charAt(0).toUpperCase()}
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald font-display text-lg font-bold text-canvas shadow-glow">
+            {userInitial}
           </div>
-          <div>
-            <b className="block text-base font-bold text-ink">{userName}</b>
-            <span className="text-xs text-mint flex items-center gap-1">
-              <Cloud size={12} />
-              {syncStatus === 'synced' ? 'Nube activa con Supabase' : 'Modo almacenamiento local'}
+          <div className="min-w-0">
+            <b className="block text-base font-bold text-ink truncate">{displayName}</b>
+            <span className="text-xs text-mint flex items-center gap-1 truncate">
+              <Cloud size={12} className="shrink-0" />
+              {syncStatus === 'synced'
+                ? authUser?.email || 'Nube activa con Supabase'
+                : syncStatus === 'syncing'
+                ? 'Sincronizando...'
+                : 'Modo local'}
             </span>
           </div>
         </div>
         <Link
           to="/settings"
-          className="rounded-xl border border-line bg-elevated px-3 py-1.5 text-xs font-semibold text-ink hover:text-mint"
+          className="rounded-xl border border-line bg-elevated px-3 py-1.5 text-xs font-semibold text-ink hover:text-mint shrink-0 ml-2"
         >
           Ajustes
         </Link>

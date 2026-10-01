@@ -1,29 +1,39 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, Check, Clock3, Flame, Target, Sparkles, CheckCircle2 } from 'lucide-react'
+import {
+  ArrowRight,
+  Check,
+  Clock3,
+  Flame,
+  Target,
+  Sparkles,
+  Plus,
+  CalendarCheck,
+  ListTodo
+} from 'lucide-react'
 import confetti from 'canvas-confetti'
 import { useApp } from '../context/AppContext'
 import { categories, getCategoryColor } from '../data/initialData'
 import Stat from '../components/dashboard/Stat'
-import { formatLongDate, weekday, dateKey, isToday } from '../utils/date'
+import { formatLongDate, weekday, isToday } from '../utils/date'
 import PageTransition from '../components/ui/PageTransition'
 
 export default function Dashboard() {
-  const { data, setDaily, dailyValue, flash } = useApp()
+  const { data, setDaily, dailyValue, flash, displayName, timeGreeting } = useApp()
   const currentWeekday = weekday()
-  const blocks = data.events[currentWeekday] || []
+  const blocks = data.events?.[currentWeekday] || []
 
-  // Hábitos completados hoy
-  const doneHabits = data.habits.filter(h => dailyValue('habits', h.id) === true).length
-  const habitRate = data.habits.length ? Math.round((doneHabits / data.habits.length) * 100) : 0
+  const totalHabits = data.habits?.length || 0
+  const doneHabits = data.habits
+    ? data.habits.filter((h) => dailyValue('habits', h.id) === true).length
+    : 0
+  const habitRate = totalHabits > 0 ? Math.round((doneHabits / totalHabits) * 100) : 0
 
   // Tareas de hoy
-  const todayTasks = data.tasks.filter(t => t.date && isToday(t.date))
-  const completedTasks = todayTasks.filter(t => t.done).length
+  const todayTasks = (data.tasks || []).filter((t) => t.date && isToday(t.date))
+  const completedTasks = todayTasks.filter((t) => t.done).length
 
   // Racha máxima entre hábitos
-  const maxStreak = data.habits.length
-    ? Math.max(...data.habits.map(h => h.streak || 0))
-    : 0
+  const maxStreak = totalHabits > 0 ? Math.max(...data.habits.map((h) => h.streak || 0)) : 0
 
   // Siguiente bloque del día
   const currentHour = new Date().getHours()
@@ -32,18 +42,18 @@ export default function Dashboard() {
 
   const nextBlock = blocks.find(([time]) => time >= currentTimeString) || blocks[0] || null
 
+  const isBrandNewUser = totalHabits === 0 && (data.tasks || []).length === 0
+
   const toggleHabit = (habitId) => {
     const isCompleted = dailyValue('habits', habitId) === true
     setDaily('habits', habitId, !isCompleted)
     flash(!isCompleted ? 'Hábito completado' : 'Hábito pendiente')
 
-    if (!isCompleted && doneHabits + 1 === data.habits.length) {
+    if (!isCompleted && doneHabits + 1 === totalHabits && totalHabits > 0) {
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.8 } })
       flash('¡Felicidades! Todos tus hábitos de hoy están cumplidos 🎉')
     }
   }
-
-  const userName = data.settings?.name || 'Compañero'
 
   return (
     <PageTransition>
@@ -53,15 +63,17 @@ export default function Dashboard() {
         <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl text-ink">
-              Buenos días, {userName}
+              {timeGreeting}, {displayName}
             </h1>
             <p className="mt-1 text-sm text-muted">
-              Los hábitos pequeños y repetidos construyen resultados exponenciales.
+              {isBrandNewUser
+                ? 'Bienvenido a tu nuevo espacio de alto rendimiento. Comienza configurando tus hábitos y tareas del día.'
+                : 'La disciplina diaria construye la libertad de tu futuro.'}
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-full bg-emerald/15 px-3.5 py-1.5 text-xs font-semibold text-mint border border-emerald/20">
             <Sparkles size={14} />
-            <span>Sistema Activo</span>
+            <span>Sistema Listo</span>
           </div>
         </div>
       </section>
@@ -71,19 +83,23 @@ export default function Dashboard() {
         <Stat
           label="Nivel de Ejecución"
           value={`${habitRate}%`}
-          detail={`${doneHabits} de ${data.habits.length} hábitos completados`}
+          detail={
+            totalHabits > 0
+              ? `${doneHabits} de ${totalHabits} hábitos completados`
+              : 'Sin hábitos activos hoy'
+          }
           color="text-mint"
         />
         <Stat
           label="Mejor Racha"
           value={`${maxStreak} días`}
-          detail="Consistencia ininterrumpida"
+          detail={maxStreak > 0 ? 'Consistencia ininterrumpida' : 'Comienza tu racha hoy'}
           color="text-orange"
         />
         <Stat
           label="Tareas de Hoy"
           value={`${completedTasks}/${todayTasks.length}`}
-          detail={todayTasks.length ? 'Tareas fijadas para hoy' : 'Sin tareas pendientes hoy'}
+          detail={todayTasks.length > 0 ? 'Tareas fijadas para hoy' : 'Sin tareas pendientes hoy'}
           color="text-cyan"
         />
         <Stat
@@ -103,9 +119,14 @@ export default function Dashboard() {
                 <Clock3 className="text-mint" size={18} />
                 Rutina de Hoy ({currentWeekday})
               </h2>
-              <Link to="/today" className="text-xs font-semibold text-mint hover:underline flex items-center gap-1">
-                Ver detalle <ArrowRight size={13} />
-              </Link>
+              {blocks.length > 0 && (
+                <Link
+                  to="/today"
+                  className="text-xs font-semibold text-mint hover:underline flex items-center gap-1"
+                >
+                  Ver detalle <ArrowRight size={13} />
+                </Link>
+              )}
             </div>
 
             <div className="mt-4 space-y-2">
@@ -132,71 +153,96 @@ export default function Dashboard() {
                   </div>
                 ))
               ) : (
-                <p className="py-8 text-center text-sm text-muted">
-                  Sin bloques programados para hoy.
-                </p>
+                <div className="py-8 text-center text-sm text-muted">
+                  <p>No tienes bloques configurados para los {currentWeekday}s.</p>
+                  <Link
+                    to="/schedule"
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-line bg-elevated px-3 py-1.5 text-xs font-semibold text-mint hover:border-emerald transition"
+                  >
+                    <Plus size={14} /> Definir mi horario semanal
+                  </Link>
+                </div>
               )}
             </div>
           </div>
 
-          <Link
-            to="/schedule"
-            className="mt-4 block text-center rounded-xl border border-line bg-elevated/40 py-2 text-xs font-semibold text-muted hover:text-ink transition"
-          >
-            Editar mi horario semanal →
-          </Link>
+          {blocks.length > 0 && (
+            <Link
+              to="/schedule"
+              className="mt-4 block text-center rounded-xl border border-line bg-elevated/40 py-2 text-xs font-semibold text-muted hover:text-ink transition"
+            >
+              Editar mi horario semanal →
+            </Link>
+          )}
         </section>
 
         {/* Hábitos Diarios */}
         <section className="card flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-line">
-              <h2 className="font-display text-lg font-bold">Hábitos Diarios</h2>
+              <h2 className="font-display text-lg font-bold flex items-center gap-2">
+                <CalendarCheck className="text-mint" size={18} />
+                Hábitos Diarios
+              </h2>
               <Link to="/habits" className="text-xs font-semibold text-mint hover:underline">
                 Gestionar
               </Link>
             </div>
 
             <div className="mt-4 space-y-2">
-              {data.habits.map((h) => {
-                const isCompleted = dailyValue('habits', h.id) === true
-                return (
-                  <button
-                    key={h.id}
-                    onClick={() => toggleHabit(h.id)}
-                    className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition ${
-                      isCompleted
-                        ? 'bg-emerald/10 border border-emerald/30'
-                        : 'bg-elevated border border-line hover:border-slate-600'
-                    }`}
+              {totalHabits > 0 ? (
+                data.habits.map((h) => {
+                  const isCompleted = dailyValue('habits', h.id) === true
+                  return (
+                    <button
+                      key={h.id}
+                      onClick={() => toggleHabit(h.id)}
+                      className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition ${
+                        isCompleted
+                          ? 'bg-emerald/10 border border-emerald/30'
+                          : 'bg-elevated border border-line hover:border-slate-600'
+                      }`}
+                    >
+                      <span
+                        className={`check ${
+                          isCompleted ? 'border-emerald bg-emerald text-canvas shadow-glow' : ''
+                        }`}
+                      >
+                        {isCompleted && <Check size={14} strokeWidth={3} />}
+                      </span>
+                      <span
+                        className={`flex-1 text-sm font-semibold truncate ${
+                          isCompleted ? 'text-slate-400 line-through' : 'text-ink'
+                        }`}
+                      >
+                        {h.title}
+                      </span>
+                      <span className="text-xs font-bold text-mint flex items-center gap-0.5">
+                        <Flame size={13} className="text-orange" />
+                        {h.streak || 0}d
+                      </span>
+                    </button>
+                  )
+                })
+              ) : (
+                <div className="py-8 text-center text-sm text-muted">
+                  <p>Aún no has registrado hábitos en tu rutina.</p>
+                  <Link
+                    to="/habits"
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-line bg-elevated px-3 py-1.5 text-xs font-semibold text-mint hover:border-emerald transition"
                   >
-                    <span
-                      className={`check ${
-                        isCompleted ? 'border-emerald bg-emerald text-canvas shadow-glow' : ''
-                      }`}
-                    >
-                      {isCompleted && <Check size={14} strokeWidth={3} />}
-                    </span>
-                    <span
-                      className={`flex-1 text-sm font-semibold truncate ${
-                        isCompleted ? 'text-slate-400 line-through' : 'text-ink'
-                      }`}
-                    >
-                      {h.title}
-                    </span>
-                    <span className="text-xs font-bold text-mint flex items-center gap-0.5">
-                      <Flame size={13} className="text-orange" />
-                      {h.streak}d
-                    </span>
-                  </button>
-                )
-              })}
+                    <Plus size={14} /> Agregar primer hábito
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
 
-          <p className="mt-4 text-center text-xs text-muted">
-            {doneHabits} de {data.habits.length} completados hoy
-          </p>
+          {totalHabits > 0 && (
+            <p className="mt-4 text-center text-xs text-muted">
+              {doneHabits} de {totalHabits} completados hoy
+            </p>
+          )}
         </section>
 
         {/* Columna Derecha: Próximo Bloque & Racha */}
@@ -210,7 +256,9 @@ export default function Dashboard() {
               {maxStreak} <span className="text-lg text-mint font-normal">días seguidos</span>
             </div>
             <p className="mt-1 text-xs text-muted">
-              Tu constancia genera inercia positiva.
+              {maxStreak > 0
+                ? 'Tu constancia genera inercia positiva.'
+                : 'Completa tus hábitos diarios para iniciar tu racha.'}
             </p>
           </div>
 

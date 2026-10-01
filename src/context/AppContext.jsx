@@ -1,9 +1,20 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { storageService } from '../services/storageService'
-import { supabaseService, getStoredSupabaseConfig, saveStoredSupabaseConfig } from '../services/supabaseService'
+import {
+  supabaseService,
+  getStoredSupabaseConfig,
+  saveStoredSupabaseConfig
+} from '../services/supabaseService'
 import { dateKey } from '../utils/date'
 
 const AppContext = createContext()
+
+export function getTimeGreeting() {
+  const h = new Date().getHours()
+  if (h >= 5 && h < 12) return 'Buenos días'
+  if (h >= 12 && h < 19) return 'Buenas tardes'
+  return 'Buenas noches'
+}
 
 export function AppProvider({ children }) {
   const [data, setData] = useState(() => storageService.get())
@@ -11,11 +22,23 @@ export function AppProvider({ children }) {
   const [syncStatus, setSyncStatus] = useState('local') // 'local' | 'syncing' | 'synced' | 'error'
   const [syncError, setSyncError] = useState(null)
   const [lastSyncTime, setLastSyncTime] = useState(null)
-  
+  const [authUser, setAuthUser] = useState(null)
+
   const isInitialMount = useRef(true)
   const syncTimeoutRef = useRef(null)
 
-  // Guardar en localStorage siempre que cambie la data
+  // Nombre calculado del usuario en orden de prioridad:
+  // 1. Nombre en metadata de Supabase Auth
+  // 2. Nombre en configuración de la app
+  // 3. Email de Supabase Auth
+  // 4. 'Usuario'
+  const displayName =
+    authUser?.user_metadata?.full_name ||
+    data?.settings?.name?.trim() ||
+    (authUser?.email ? authUser.email.split('@')[0] : '') ||
+    'Usuario'
+
+  // Guardar en localStorage inmediatamente en cada cambio
   useEffect(() => {
     storageService.save(data)
 
@@ -24,7 +47,7 @@ export function AppProvider({ children }) {
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current)
       setSyncStatus('syncing')
       syncTimeoutRef.current = setTimeout(async () => {
-        const res = await supabaseService.pushRemoteData(data)
+        const res = await supabaseService.pushRemoteData(data, authUser?.id)
         if (res.success) {
           setSyncStatus('synced')
           setLastSyncTime(new Date())
@@ -35,23 +58,45 @@ export function AppProvider({ children }) {
         }
       }, 800)
     }
-  }, [data])
+  }, [data, authUser])
 
-  // Carga inicial y verificación de nube
+  // Carga inicial y escucha de sesión en Supabase
   useEffect(() => {
-    async function initCloudSync() {
+    let subscription = null
+
+    async function init() {
+      // 1. Verificar si hay usuario autenticado en Supabase
       if (supabaseService.isConfigured()) {
+        const user = await supabaseService.getCurrentUser()
+        setAuthUser(user)
+
+        // Escuchar cambios de sesión
+        const sub = supabaseService.onAuthStateChange(async (event, session) => {
+          const nextUser = session?.user || null
+          setAuthUser(nextUser)
+          if (nextUser?.id) {
+            setSyncStatus('syncing')
+            const cloudRes = await supabaseService.fetchRemoteData(nextUser.id)
+            if (cloudRes.data) {
+              setData(cloudRes.data)
+              storageService.save(cloudRes.data)
+            }
+            setSyncStatus('synced')
+          }
+        })
+        subscription = sub
+
+        // 2. Traer datos remotos ligados al user_id actual
         setSyncStatus('syncing')
-        const remote = await supabaseService.fetchRemoteData()
+        const remote = await supabaseService.fetchRemoteData(user?.id)
         if (remote.data) {
-          // Si hay datos remotos, los adoptamos
           setData(remote.data)
           storageService.save(remote.data)
           setSyncStatus('synced')
           setLastSyncTime(new Date(remote.updatedAt || Date.now()))
         } else if (!remote.error) {
-          // No había datos aún en nube: subimos los locales
-          const pushRes = await supabaseService.pushRemoteData(data)
+          // No había datos aún en la nube para este usuario: subimos los datos iniciales
+          const pushRes = await supabaseService.pushRemoteData(data, user?.id)
           if (pushRes.success) {
             setSyncStatus('synced')
             setLastSyncTime(new Date())
@@ -69,7 +114,11 @@ export function AppProvider({ children }) {
       isInitialMount.current = false
     }
 
-    initCloudSync()
+    init()
+
+    return () => {
+      if (subscription?.unsubscribe) subscription.unsubscribe()
+    }
   }, [])
 
   const flash = (message) => {
@@ -111,7 +160,7 @@ export function AppProvider({ children }) {
       return
     }
     setSyncStatus('syncing')
-    const res = await supabaseService.pushRemoteData(data)
+    const res = await supabaseService.pushRemoteData(data, authUser?.id)
     if (res.success) {
       setSyncStatus('synced')
       setLastSyncTime(new Date())
@@ -159,7 +208,10 @@ export function AppProvider({ children }) {
         lastSyncTime,
         manualSync,
         configureSupabase,
-        supabaseConfig: getStoredSupabaseConfig()
+        supabaseConfig: getStoredSupabaseConfig(),
+        authUser,
+        displayName,
+        timeGreeting: getTimeGreeting()
       }}
     >
       {children}

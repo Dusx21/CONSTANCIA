@@ -196,7 +196,7 @@ function Quick({ onClose }) {
 export default function AppLayout({ children }) {
   const [quick, setQuick] = useState(false)
   const loc = useLocation()
-  const { data, syncStatus } = useApp()
+  const { data, syncStatus, displayName, authUser } = useApp()
 
   // Navegación para la barra móvil inferior
   const mobileNav = [
@@ -206,7 +206,7 @@ export default function AppLayout({ children }) {
     { to: '/tasks', label: 'Tareas', Icon: I.ListChecks }
   ]
 
-  const userName = data?.settings?.name || 'Mi Espacio'
+  const userInitial = displayName.charAt(0).toUpperCase() || 'U'
 
   return (
     <div className="min-h-screen bg-canvas text-ink">
@@ -219,11 +219,13 @@ export default function AppLayout({ children }) {
           className="mt-6 flex items-center gap-3 rounded-2xl border border-line bg-elevated p-3 transition hover:border-slate-600"
         >
           <div className="grid h-10 w-10 place-items-center rounded-xl bg-mint font-display font-bold text-canvas">
-            {userName.charAt(0).toUpperCase()}
+            {userInitial}
           </div>
           <div className="min-w-0 flex-1">
-            <b className="block truncate text-sm font-semibold text-ink">{userName}</b>
-            <p className="text-xs text-mint">Espacio Personal</p>
+            <b className="block truncate text-sm font-semibold text-ink">{displayName}</b>
+            <p className="text-xs text-mint truncate">
+              {authUser?.email ? authUser.email : 'Espacio Personal'}
+            </p>
           </div>
         </Link>
 
@@ -246,14 +248,30 @@ export default function AppLayout({ children }) {
         <div className="mt-auto space-y-2 border-t border-line/60 pt-4 text-xs text-muted">
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <span className={`inline-block h-2 w-2 rounded-full ${syncStatus === 'synced' ? 'bg-mint shadow-glow' : syncStatus === 'error' ? 'bg-red-400' : 'bg-slate-500'}`} />
-              {syncStatus === 'synced' ? 'Nube sincronizada' : syncStatus === 'syncing' ? 'Sincronizando...' : 'Guardado local'}
+              <span
+                className={`inline-block h-2 w-2 rounded-full ${
+                  syncStatus === 'synced'
+                    ? 'bg-mint shadow-glow'
+                    : syncStatus === 'error'
+                    ? 'bg-red-400'
+                    : syncStatus === 'syncing'
+                    ? 'bg-cyan animate-pulse'
+                    : 'bg-slate-500'
+                }`}
+              />
+              {syncStatus === 'synced'
+                ? 'Conectado a Supabase'
+                : syncStatus === 'syncing'
+                ? 'Sincronizando...'
+                : syncStatus === 'error'
+                ? 'Error de sincronización'
+                : 'Modo local'}
             </span>
             <Link to="/settings" className="text-mint hover:underline">
               Ajustes
             </Link>
           </div>
-          <span className="block text-[11px] text-slate-500">CONSTANCIA OS v2.0 • PWA</span>
+          <span className="block text-[11px] text-slate-500">CONSTANCIA v2.0 • Producción</span>
         </div>
       </aside>
 

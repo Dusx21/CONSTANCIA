@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   Check,
   Clock3,
@@ -7,7 +8,8 @@ import {
   BadgeCheck,
   ListTodo,
   CheckCircle2,
-  CalendarCheck2
+  CalendarCheck2,
+  Plus
 } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import { categories, getCategoryColor } from '../data/initialData'
@@ -17,9 +19,9 @@ import PageTransition from '../components/ui/PageTransition'
 
 export default function Today() {
   const { data, update, setDaily, dailyValue, flash } = useApp()
-  const todayKey = dateKey()
   const currentWeekday = weekday()
-  const blocks = data.events[currentWeekday] || []
+  const blocks = data.events?.[currentWeekday] || []
+  const habits = data.habits || []
 
   // Bloques completados hoy
   const completedBlocks = blocks.filter(([time, title]) => {
@@ -27,20 +29,20 @@ export default function Today() {
   }).length
 
   // Tareas de hoy
-  const todayTasks = data.tasks.filter(t => t.date && isToday(t.date))
-  const completedTasks = todayTasks.filter(t => t.done).length
+  const todayTasks = (data.tasks || []).filter((t) => t.date && isToday(t.date))
+  const completedTasks = todayTasks.filter((t) => t.done).length
 
   // Hábitos de hoy
-  const completedHabits = data.habits.filter(h => dailyValue('habits', h.id) === true).length
+  const completedHabits = habits.filter((h) => dailyValue('habits', h.id) === true).length
 
   // Porcentaje general del día
-  const totalItems = blocks.length + todayTasks.length + data.habits.length
+  const totalItems = blocks.length + todayTasks.length + habits.length
   const totalDone = completedBlocks + completedTasks + completedHabits
   const dailyScore = totalItems > 0 ? Math.round((totalDone / totalItems) * 100) : 0
 
   const toggleTask = (task) => {
     const nextDone = !task.done
-    const updated = data.tasks.map(t =>
+    const updated = data.tasks.map((t) =>
       t.id === task.id ? { ...t, done: nextDone } : t
     )
     update('tasks', updated)
@@ -52,8 +54,7 @@ export default function Today() {
     setDaily('habits', habitId, !isDone)
     flash(!isDone ? 'Hábito completado' : 'Hábito pendiente')
 
-    // Si completó todos los hábitos del día
-    if (!isDone && completedHabits + 1 === data.habits.length) {
+    if (!isDone && completedHabits + 1 === habits.length && habits.length > 0) {
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.8 } })
     }
   }
@@ -189,7 +190,13 @@ export default function Today() {
               })
             ) : (
               <div className="card py-12 text-center text-sm text-muted">
-                No tienes bloques de horario configurados para los {currentWeekday}s.
+                <p>No tienes bloques de horario configurados para los {currentWeekday}s.</p>
+                <Link
+                  to="/schedule"
+                  className="primary-btn mt-4 inline-flex shadow-glow"
+                >
+                  <Plus size={16} /> Definir mi rutina en Mi Horario
+                </Link>
               </div>
             )}
           </div>
@@ -202,45 +209,54 @@ export default function Today() {
             <div className="flex items-center justify-between pb-3 border-b border-line mb-3">
               <h3 className="font-display text-base font-bold flex items-center gap-2">
                 <BadgeCheck className="text-mint" size={18} />
-                Hábitos Diarios ({completedHabits}/{data.habits.length})
+                Hábitos Diarios ({completedHabits}/{habits.length})
               </h3>
             </div>
 
-            <div className="space-y-2">
-              {data.habits.map((h) => {
-                const isDone = dailyValue('habits', h.id) === true
-                return (
-                  <button
-                    key={h.id}
-                    onClick={() => toggleHabit(h.id)}
-                    className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition ${
-                      isDone
-                        ? 'bg-emerald/10 border border-emerald/30'
-                        : 'bg-elevated border border-line hover:border-slate-600'
-                    }`}
-                  >
-                    <span
-                      className={`check ${
-                        isDone ? 'border-emerald bg-emerald text-canvas shadow-glow' : ''
+            {habits.length > 0 ? (
+              <div className="space-y-2">
+                {habits.map((h) => {
+                  const isDone = dailyValue('habits', h.id) === true
+                  return (
+                    <button
+                      key={h.id}
+                      onClick={() => toggleHabit(h.id)}
+                      className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition ${
+                        isDone
+                          ? 'bg-emerald/10 border border-emerald/30'
+                          : 'bg-elevated border border-line hover:border-slate-600'
                       }`}
                     >
-                      {isDone && <Check size={14} strokeWidth={3} />}
-                    </span>
-                    <span
-                      className={`flex-1 text-sm font-semibold truncate ${
-                        isDone ? 'text-slate-400 line-through' : 'text-ink'
-                      }`}
-                    >
-                      {h.title}
-                    </span>
-                    <span className="text-xs font-bold text-mint flex items-center gap-0.5">
-                      <Flame size={13} className="text-orange" />
-                      {h.streak}d
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
+                      <span
+                        className={`check ${
+                          isDone ? 'border-emerald bg-emerald text-canvas shadow-glow' : ''
+                        }`}
+                      >
+                        {isDone && <Check size={14} strokeWidth={3} />}
+                      </span>
+                      <span
+                        className={`flex-1 text-sm font-semibold truncate ${
+                          isDone ? 'text-slate-400 line-through' : 'text-ink'
+                        }`}
+                      >
+                        {h.title}
+                      </span>
+                      <span className="text-xs font-bold text-mint flex items-center gap-0.5">
+                        <Flame size={13} className="text-orange" />
+                        {h.streak || 0}d
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-xs text-muted">
+                <p>No tienes hábitos asignados aún.</p>
+                <Link to="/habits" className="text-mint font-semibold underline mt-2 block">
+                  + Agregar primer hábito
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Tareas programadas para hoy */}
@@ -281,9 +297,12 @@ export default function Today() {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-muted py-4 text-center">
-                No tienes tareas programadas para la fecha de hoy.
-              </p>
+              <div className="text-center py-6 text-xs text-muted">
+                <p>No tienes tareas programadas para hoy.</p>
+                <Link to="/tasks" className="text-mint font-semibold underline mt-2 block">
+                  + Crear primera tarea
+                </Link>
+              </div>
             )}
           </div>
         </aside>

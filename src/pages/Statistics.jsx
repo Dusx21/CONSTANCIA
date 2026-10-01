@@ -18,17 +18,20 @@ const DAYS_SHORT = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 export default function Statistics() {
   const { data } = useApp()
 
-  // Calcular cumplimiento real por cada día de la semana a partir de data.habits
+  const habits = data.habits || []
+  const tasks = data.tasks || []
+
+  // Calcular cumplimiento real por cada día de la semana a partir de habits
   const weeklyData = DAYS_SHORT.map((dayLabel, index) => {
-    if (!data.habits.length) return { d: dayLabel, v: 0 }
-    const doneCount = data.habits.filter(h => h.history?.[index] === 1).length
-    const percentage = Math.round((doneCount / data.habits.length) * 100)
+    if (!habits.length) return { d: dayLabel, v: 0 }
+    const doneCount = habits.filter((h) => h.history?.[index] === 1).length
+    const percentage = Math.round((doneCount / habits.length) * 100)
     return { d: dayLabel, v: percentage }
   })
 
   // Tareas completadas vs total
-  const totalTasks = data.tasks.length
-  const completedTasks = data.tasks.filter(t => t.done).length
+  const totalTasks = tasks.length
+  const completedTasks = tasks.filter((t) => t.done).length
   const taskRate = totalTasks ? Math.round((completedTasks / totalTasks) * 100) : 0
 
   // Promedio de cumplimiento semanal
@@ -37,12 +40,12 @@ export default function Statistics() {
     : 0
 
   // Racha mayor
-  const maxStreak = data.habits.length
-    ? Math.max(...data.habits.map(h => h.streak || 0))
+  const maxStreak = habits.length
+    ? Math.max(...habits.map((h) => h.streak || 0))
     : 0
 
   // Días perfectos (100% en la semana)
-  const perfectDays = weeklyData.filter(d => d.v === 100).length
+  const perfectDays = habits.length > 0 ? weeklyData.filter((d) => d.v === 100).length : 0
 
   return (
     <PageTransition>

@@ -98,6 +98,24 @@ export default function Settings() {
       <section className="card mt-6">
         <h2 className="font-display text-xl font-bold">Perfil del Usuario</h2>
         <div className="mt-4 space-y-4">
+          {authUser && (
+            <div className="rounded-xl border border-emerald/30 bg-emerald/10 p-3 text-xs text-mint flex items-center justify-between">
+              <span>
+                Cuenta Supabase activa: <b>{authUser.email}</b>
+              </span>
+              <button
+                type="button"
+                onClick={async () => {
+                  await supabaseService.signOut()
+                  flash('Sesión de Supabase cerrada')
+                }}
+                className="text-[11px] underline hover:text-white"
+              >
+                Cerrar sesión
+              </button>
+            </div>
+          )}
+
           <Field label="Nombre que aparece en la aplicación">
             <input
               className="input"
@@ -105,7 +123,7 @@ export default function Settings() {
               onChange={(e) =>
                 update('settings', { ...data.settings, name: e.target.value })
               }
-              placeholder="Tu nombre..."
+              placeholder={authUser?.user_metadata?.full_name || 'Escribe tu nombre personal...'}
             />
           </Field>
 

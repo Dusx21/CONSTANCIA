@@ -129,25 +129,26 @@ export default function Schedule() {
           <p className="mt-1 text-xs text-muted">En los 7 días de la semana</p>
         </div>
         <div className="card">
-          <p className="text-xs font-semibold uppercase text-muted">Clínica & Salud</p>
+          <p className="text-xs font-semibold uppercase text-muted">Categorías Activas</p>
           <p className="mt-2 font-display text-3xl font-bold text-cyan">
-            {blocksByCat['Clínica'] || 0} <span className="text-sm font-normal text-muted">bloques</span>
+            {Object.keys(blocksByCat).length} <span className="text-sm font-normal text-muted">tipos</span>
           </p>
-          <p className="mt-1 text-xs text-muted">Turnos y prácticas</p>
+          <p className="mt-1 text-xs text-muted">Distribución de actividades</p>
         </div>
         <div className="card">
-          <p className="text-xs font-semibold uppercase text-muted">Gimnasio & Salud</p>
+          <p className="text-xs font-semibold uppercase text-muted">Días Estructurados</p>
           <p className="mt-2 font-display text-3xl font-bold text-orange">
-            {blocksByCat['Gimnasio'] || 0} <span className="text-sm font-normal text-muted">bloques</span>
+            {Object.values(data.events || {}).filter((list) => list.length > 0).length}/7
           </p>
-          <p className="mt-1 text-xs text-muted">Entrenamientos activos</p>
+          <p className="mt-1 text-xs text-muted">Días con rutina definida</p>
         </div>
         <div className="card">
-          <p className="text-xs font-semibold uppercase text-muted">Trabajo & Negocio</p>
+          <p className="text-xs font-semibold uppercase text-muted">Bloques en {activeDay}</p>
           <p className="mt-2 font-display text-3xl font-bold text-gold">
-            {(blocksByCat['Trabajo remoto'] || 0) + (blocksByCat['Negocio'] || 0)} <span className="text-sm font-normal text-muted">bloques</span>
+            {(data.events?.[activeDay] || []).length}{' '}
+            <span className="text-sm font-normal text-muted">bloques</span>
           </p>
-          <p className="mt-1 text-xs text-muted">Avance profesional</p>
+          <p className="mt-1 text-xs text-muted">Carga del día seleccionado</p>
         </div>
       </div>
 

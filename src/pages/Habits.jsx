@@ -230,7 +230,7 @@ export default function Habits() {
         </section>
 
         {/* Panel Lateral: Detalle del Hábito Seleccionado */}
-        {selectedHabit && (
+        {selectedHabit ? (
           <aside className="card flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-line">
@@ -256,7 +256,7 @@ export default function Habits() {
                   <span className="text-xs text-muted block">Racha actual</span>
                   <b className="text-2xl font-display font-bold text-mint flex items-center gap-1 mt-1">
                     <Flame size={20} className="text-orange" />
-                    {selectedHabit.streak}d
+                    {selectedHabit.streak || 0}d
                   </b>
                 </div>
 
@@ -264,7 +264,7 @@ export default function Habits() {
                   <span className="text-xs text-muted block">Esta semana</span>
                   <b className="text-2xl font-display font-bold text-cyan mt-1 block">
                     {Math.round(
-                      (selectedHabit.history.reduce((a, b) => a + b, 0) / 7) * 100
+                      ((selectedHabit.history || []).reduce((a, b) => a + b, 0) / 7) * 100
                     )}%
                   </b>
                 </div>
@@ -275,7 +275,7 @@ export default function Habits() {
                   <TrendingUp size={14} /> Consistencia semanal
                 </p>
                 Has completado{' '}
-                <b>{selectedHabit.history.reduce((a, b) => a + b, 0)} de 7 días</b> en el ciclo actual.
+                <b>{(selectedHabit.history || []).reduce((a, b) => a + b, 0)} de 7 días</b> en el ciclo actual.
               </div>
             </div>
 
@@ -293,6 +293,20 @@ export default function Habits() {
                 <Trash2 size={15} /> Eliminar
               </button>
             </div>
+          </aside>
+        ) : (
+          <aside className="card flex flex-col justify-center items-center text-center p-6 text-muted border-dashed">
+            <Award size={36} className="text-mint mb-2 opacity-70" />
+            <h3 className="font-display text-base font-bold text-ink">Comienza tu primera racha</h3>
+            <p className="mt-1 text-xs text-muted">
+              Define hábitos diarios o semanales y haz check-in cada día para construir disciplina.
+            </p>
+            <button
+              onClick={() => openModal(null)}
+              className="primary-btn mt-4 text-xs shadow-glow inline-flex"
+            >
+              <Plus size={14} /> Crear primer hábito
+            </button>
           </aside>
         )}
       </div>
