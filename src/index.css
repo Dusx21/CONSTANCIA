@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html {
+    background: #090a0f;
+    scroll-behavior: smooth;
+  }
+  body {
+    margin: 0;
+    background: #090a0f;
+    color: #f1f5f9;
+    font-family: Geist, sans-serif;
+  }
+  button, input, textarea, select {
+    font: inherit;
+  }
+  button {
+    cursor: pointer;
+  }
+  ::selection {
+    background: #10b981;
+    color: #090a0f;
+  }
+
+  /* Custom subtle scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #232738;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-2xl border border-line bg-surface;
+  }
+  .card {
+    @apply rounded-2xl border border-line bg-surface p-4 transition-all duration-200 hover:border-slate-600 hover:bg-elevated;
+  }
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-wider text-mint;
+  }
+  .icon-btn {
+    @apply grid h-10 w-10 place-items-center rounded-xl border border-line bg-elevated text-muted transition-all hover:border-emerald hover:text-mint active:scale-95;
+  }
+  .primary-btn {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald px-4 py-2.5 text-sm font-semibold text-canvas transition-all duration-150 hover:bg-mint hover:shadow-glow active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .input {
+    @apply w-full rounded-xl border border-line bg-elevated px-3 py-2.5 text-sm text-ink outline-none transition focus:border-emerald focus:ring-1 focus:ring-emerald;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold;
+  }
+  .check {
+    @apply grid h-6 w-6 shrink-0 place-items-center rounded-lg border border-line transition-all duration-150 hover:border-mint;
+  }
+  .nav-link {
+    @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-300 transition hover:bg-elevated hover:text-ink;
+  }
+  .nav-link.active {
+    @apply bg-emerald text-canvas font-semibold;
+  }
+}
+
+/* Soporte para safe area en móviles modernos (iPhone, Android con barra de gestos) */
+.safe-bottom {
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+}
+.safe-pb-main {
+  padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *:before, *:after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

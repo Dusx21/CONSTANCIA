@@ -1,0 +1,2 @@
+import {AnimatePresence,motion} from 'framer-motion'; import {CheckCircle2} from 'lucide-react'; import {useApp} from '../../context/AppContext'
+export default function Toast(){const {toast}=useApp();return <AnimatePresence>{toast&&<motion.div initial={{opacity:0,y:24}} animate={{opacity:1,y:0}} exit={{opacity:0,y:24}} className="fixed bottom-24 right-4 z-[70] flex items-center gap-3 rounded-xl border border-line bg-elevated px-4 py-3 text-sm shadow-2xl sm:bottom-6"><CheckCircle2 size={19} className="text-mint"/>{toast}</motion.div>}</AnimatePresence>}

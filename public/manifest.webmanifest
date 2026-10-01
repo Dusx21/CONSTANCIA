@@ -1,0 +1,19 @@
+{
+  "name": "CONSTANCIA — Tu Sistema de Alto Rendimiento",
+  "short_name": "Constancia",
+  "description": "Sistema personal de hábitos, tareas, horario y productividad diaria.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#090a0f",
+  "theme_color": "#090a0f",
+  "icons": [
+    {
+      "src": "/constancia-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+/** @type {import('tailwindcss').Config} */
+export default { content: ['./index.html','./src/**/*.{js,jsx}'], theme: { extend: { fontFamily: { display: ['"Plus Jakarta Sans"','sans-serif'], body: ['Geist','sans-serif'] }, colors: { canvas:'#090a0f', surface:'#12141c', elevated:'#181b26', inset:'#1f2332', line:'#232738', ink:'#f1f5f9', muted:'#94a3b8', emerald:'#10b981', mint:'#34d399', cyan:'#06b6d4', violet:'#8b5cf6', orange:'#f97316', gold:'#eab308', rose:'#ec4899' }, boxShadow: { glow:'0 0 24px -6px rgba(16,185,129,.24)' } } }, plugins: [] }
